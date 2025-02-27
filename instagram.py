@@ -48,10 +48,11 @@ def download_post_or_reel(loader, url):
     """Download Instagram post or reel"""
     try:
         shortcode = extract_shortcode(url)
-        post = instaloader.Post.from_shortcode(loader.context, shortcode)
+        main_post = instaloader.Post.from_shortcode(loader.context, shortcode)
 
-        posts = post.__dict__["_node"]["edge_sidecar_to_children"]["edges"]
+        posts = main_post.__dict__["_node"]["edge_sidecar_to_children"]["edges"]
         responses = []
+
         for post in posts:
             node = post["node"]
             display_resources = node.get("display_resources", [])
@@ -76,7 +77,7 @@ def download_post_or_reel(loader, url):
         return {
             "status": "success",
             "message": f"Downloaded post/reel {shortcode}",
-            "username": post.owner_username,
+            "username": main_post.owner_username,
             "data": responses,
         }
 

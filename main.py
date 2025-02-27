@@ -49,13 +49,17 @@ def process_input(url):
 
                 # Center align the buttons using columns
                 button_col1, button_col2, button_col3 = st.columns([1, 2, 1])
+
                 with button_col2:
                     try:
+                        file_name = f"{response['username']}_{int(time.time())}_{idx}"
+                        file_extension = "jpg" if post.type == "image" else "mp4"
+
                         content_response = requests.get(post.url)
                         st.download_button(
                             label=download_label,
                             data=content_response.content,
-                            file_name=f"{response['username']}_{int(time.time())}_{idx}",
+                            file_name=f"{file_name}.{file_extension}",
                             mime=(
                                 "image/jpeg" if post.type == "image" else "video/mp4"
                             ),
