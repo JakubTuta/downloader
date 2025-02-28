@@ -113,12 +113,6 @@ def display_posts():
         return
 
     response = st.session_state.processed_data
-
-    if not response:
-        st.error("Failed to download post data")
-
-        return
-
     posts: typing.List[Response] = response["data"]  # type: ignore
 
     for idx, post in enumerate(posts):

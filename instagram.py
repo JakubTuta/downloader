@@ -1,4 +1,3 @@
-import pprint
 import profile
 import re
 import typing
@@ -7,8 +6,6 @@ from pathlib import Path
 import instaloader
 import pydantic
 import requests
-
-download_directory = "downloader"
 
 
 class Response(pydantic.BaseModel):
@@ -106,10 +103,17 @@ def _fetch_via_graphql(url, error_str):
     response = requests.get(graphql_url, headers={"User-Agent": "Mozilla/5.0"})
     data = response.json()
 
-    if "data" in data and "shortcode_media" in data["data"]:
-        return _process_post_data(
-            data["data"]["shortcode_media"], shortcode + " via GraphQL"
-        )
+    if "data" in data:
+        # Check for xdt_shortcode_media (new format)
+        if "xdt_shortcode_media" in data["data"]:
+            return _process_post_data(
+                data["data"]["xdt_shortcode_media"], shortcode + " via GraphQL"
+            )
+        # Check for shortcode_media (old format)
+        elif "shortcode_media" in data["data"]:
+            return _process_post_data(
+                data["data"]["shortcode_media"], shortcode + " via GraphQL"
+            )
 
     return None
 
@@ -119,12 +123,14 @@ def download_post_or_reel(loader, url):
     try:
         shortcode = extract_shortcode(url)
         main_post = instaloader.Post.from_shortcode(loader.context, shortcode)
+
         return _process_post_data(main_post.__dict__["_node"], shortcode)
 
     except Exception as e:
         error_str = str(e)
+        print("ERROR\n", error_str)
         if re.search(r"(https://[^\"'\s]+graphql/query[^\"'\s]+)", error_str):
-
+            print("Fetching via GraphQL")
             try:
                 result = _fetch_via_graphql(url, error_str)
                 if result:
@@ -196,33 +202,6 @@ def download_profile(loader, url):
         }
 
 
-def cleanup_downloads():
-    """Delete non-media files from downloads directory and remove images when videos exist"""
-    allowed_extensions = (".jpg", ".jpeg", ".png", ".gif", ".mp4", ".mov", ".avi")
-    video_extensions = (".mp4", ".mov", ".avi")
-    downloads_path = Path(download_directory)
-
-    if downloads_path.exists():
-        # First pass: Find files with same stem that have both image and video
-        stems_with_video = set()
-        for file in downloads_path.iterdir():
-            if file.is_file() and file.suffix.lower() in video_extensions:
-                stems_with_video.add(file.stem)
-
-        # Second pass: Delete files
-        for file in downloads_path.iterdir():
-            if file.is_file():
-                # Delete non-media files
-                if not file.suffix.lower() in allowed_extensions:
-                    file.unlink()
-                # Delete images that have corresponding videos
-                elif (
-                    file.suffix.lower() not in video_extensions
-                    and file.stem in stems_with_video
-                ):
-                    file.unlink()
-
-
 def download_instagram_content(url) -> dict[str, typing.Union[str, list[Response]]]:
     # Initialize instaloader
     loader: instaloader.Instaloader = initialize_loader()
@@ -247,7 +226,5 @@ def download_instagram_content(url) -> dict[str, typing.Union[str, list[Response
             "message": "Unsupported URL format",
             "data": [],
         }
-
-    # cleanup_downloads()
 
     return result
