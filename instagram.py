@@ -101,6 +101,11 @@ def _fetch_via_graphql(url, error_str):
     graphql_url_match = re.search(
         r"(https://[^\"'\s]+graphql/query[^\"'\s]+)", error_str
     )
+    return {
+        "status": "error",
+        "message": str(graphql_url_match),
+        "data": [],
+    }
     if not graphql_url_match:
         return None
 
@@ -138,11 +143,6 @@ def download_post_or_reel(loader, url):
         if re.search(r"(https://[^\"'\s]+graphql/query[^\"'\s]+)", error_str):
             try:
                 result = _fetch_via_graphql(url, error_str)
-                return {
-                    "status": "error",
-                    "message": str(result),
-                    "data": [],
-                }
                 if result:
                     return result
 
