@@ -133,6 +133,9 @@ def _fetch_via_graphql(url, error_str):
 def download_post_or_reel(loader, url):
     """Download Instagram post or reel"""
     try:
+        raise Exception(
+            "https://www.instagram.com/graphql/query?variables=%7B%22shortcode%22%3A%22DB9RTt6ibKc%22%7D&doc_id=8845758582119845&server_timestamps=true"
+        )
         shortcode = extract_shortcode(url)
         main_post = instaloader.Post.from_shortcode(loader.context, shortcode)
 
