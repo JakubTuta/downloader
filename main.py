@@ -158,6 +158,14 @@ if "selected_files" not in st.session_state:
 if "processed_data" not in st.session_state:
     st.session_state.processed_data = None
 
+st.markdown(
+    """
+    ## Available downloads
+
+    - Instagram: Posts/Reels
+"""
+)
+
 input_text = st.text_input("Enter url")
 
 if st.button("Submit"):
