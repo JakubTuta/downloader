@@ -107,7 +107,7 @@ def _fetch_via_graphql(url, error_str):
     graphql_url = graphql_url_match.group(1)
     shortcode = extract_shortcode(url)
 
-    response = requests.get(graphql_url, headers={"User-Agent": "Mozilla/5.0"})
+    response = requests.get(graphql_url)
     data = response.json()
 
     return {
