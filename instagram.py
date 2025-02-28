@@ -110,7 +110,7 @@ def _fetch_via_graphql(url, error_str):
     response = requests.get(graphql_url)
     return {
         "status": "error",
-        "message": str(graphql_url),
+        "message": str(response.status_code),
         "data": [],
     }
     data = response.json()
