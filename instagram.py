@@ -98,11 +98,6 @@ def _process_post_data(post_data, shortcode):
 
 def _fetch_via_graphql(url, error_str):
     """Attempt to fetch post data via GraphQL API"""
-    return {
-        "status": "error",
-        "message": "xdd",
-        "data": [],
-    }
     graphql_url_match = re.search(
         r"(https://[^\"'\s]+graphql/query[^\"'\s]+)", error_str
     )
@@ -111,9 +106,16 @@ def _fetch_via_graphql(url, error_str):
 
     graphql_url = graphql_url_match.group(1)
     shortcode = extract_shortcode(url)
-    my_url = "https://www.instagram.com/graphql/query?variables=%7B%22shortcode%22%3A%22DB9RTt6ibKc%22%7D&doc_id=8845758582119845&server_timestamps=true"
-    response = requests.get(my_url)
+
+    session = requests.Session()
+    session.headers.update(
+        {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+    )
+    response = session.get(graphql_url)
     data = response.json()
+
     return {
         "status": "error",
         "message": str(data),
