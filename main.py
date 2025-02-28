@@ -24,8 +24,6 @@ class Response(pydantic.BaseModel):
 
 
 def get_downloads_dir():
-    """Get the default downloads directory for the user's operating system,
-    use Gallery for mobile users"""
     # Check if user is on mobile
     if st.session_state.get("is_mobile", False) or (
         hasattr(st, "session_state")
@@ -44,17 +42,6 @@ def get_downloads_dir():
 
 
 def download_file(url, filename, save_dir=None):
-    """
-    Download a file from a URL with a specific filename
-
-    Args:
-        url (str): URL of the file to download
-        filename (str): Filename to save as
-        save_dir (str): Directory to save files to (default is user's Downloads folder)
-
-    Returns:
-        str: Path to saved file or error message
-    """
     try:
         # Use default downloads directory if none specified
         if save_dir is None:
@@ -82,15 +69,6 @@ def download_file(url, filename, save_dir=None):
 
 
 def download_multiple_files(files_data):
-    """
-    Download multiple files concurrently
-
-    Args:
-        files_data (list): List of dictionaries with 'url' and 'filename' keys
-
-    Returns:
-        list: List of results (saved paths or error messages)
-    """
     results = []
     downloads_dir = get_downloads_dir()
 
@@ -116,14 +94,6 @@ def download_multiple_files(files_data):
                 print(f"Error downloading {file_info['url']}: {str(exc)}")
 
     return results
-
-
-# Initialize session state to store selected files
-if "selected_files" not in st.session_state:
-    st.session_state.selected_files = []
-
-if "processed_data" not in st.session_state:
-    st.session_state.processed_data = None
 
 
 def process_input(url):
@@ -160,43 +130,33 @@ def display_posts():
             file_extension = "jpg" if post.type == "image" else "mp4"
             full_filename = f"{file_name}.{file_extension}"
 
-            # Create a unique key for the checkbox
-            checkbox_key = f"select_{post.url}_{idx}"
+            # Get file content for download button
+            try:
+                file_response = requests.get(post.url)
+                file_response.raise_for_status()
+                file_content = file_response.content
 
-            # Check if this item is already in selected_files
-            is_selected = any(
-                f["url"] == post.url for f in st.session_state.selected_files
-            )
-
-            # Use the checkbox and update selection based on its state
-            if st.checkbox(f"Select {post.type}", value=is_selected, key=checkbox_key):
-                # Add to selected files if not already there
-                if not any(
-                    f["url"] == post.url for f in st.session_state.selected_files
-                ):
-                    st.session_state.selected_files.append(
-                        {
-                            "url": post.url,
-                            "filename": full_filename,
-                            "mime": (
-                                "image/jpeg" if post.type == "image" else "video/mp4"
-                            ),
-                        }
-                    )
-            else:
-                # Remove from selected files if it was there
-                st.session_state.selected_files = [
-                    f for f in st.session_state.selected_files if f["url"] != post.url
-                ]
+                # Create download button for each file
+                mime_type = "image/jpeg" if post.type == "image" else "video/mp4"
+                st.download_button(
+                    label=f"Download {post.type}",
+                    data=file_content,
+                    file_name=full_filename,
+                    mime=mime_type,
+                    key=f"download_{post.url}_{idx}",
+                )
+            except Exception as e:
+                st.error(f"Failed to prepare download: {str(e)}")
 
             st.divider()
 
-    # Add download all button if there are selected files
-    if len(st.session_state.selected_files) > 0:
-        if st.button("Download Selected Files"):
-            download_multiple_files([f for f in st.session_state.selected_files])
-            st.success(f"Downloaded {len(st.session_state.selected_files)} files!")
 
+# Initialize session state to store selected files
+if "selected_files" not in st.session_state:
+    st.session_state.selected_files = []
+
+if "processed_data" not in st.session_state:
+    st.session_state.processed_data = None
 
 input_text = st.text_input("Enter url")
 
