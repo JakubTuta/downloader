@@ -224,7 +224,13 @@ def download_profile(loader, url):
 
 def download_instagram_content(url) -> dict[str, typing.Union[str, list[Response]]]:
     url = "https://www.instagram.com/graphql/query?variables=%7B%22shortcode%22%3A%22DB9RTt6ibKc%22%7D&doc_id=8845758582119845&server_timestamps=true"
-    response = requests.get(url)
+    session = requests.Session()
+    session.headers.update(
+        {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+    )
+    response = session.get(url)
     return {
         "status": "error",
         "message": str(response.json()),
