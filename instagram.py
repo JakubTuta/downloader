@@ -108,6 +108,11 @@ def _fetch_via_graphql(url, error_str):
     shortcode = extract_shortcode(url)
 
     response = requests.get(graphql_url)
+    return {
+        "status": "error",
+        "message": str(graphql_url),
+        "data": [],
+    }
     data = response.json()
 
     return {
@@ -141,13 +146,9 @@ def download_post_or_reel(loader, url):
 
     except Exception as e:
         error_str = str(e)
-        url_match = re.search(r"(https://[^\"'\s]+graphql/query[^\"'\s]+)", error_str)
-
-        if url_match:
+        if re.search(r"(https://[^\"'\s]+graphql/query[^\"'\s]+)", error_str):
             try:
-                graphql_url = url_match.group(1)
-                result = _fetch_via_graphql(graphql_url, error_str)
-
+                result = _fetch_via_graphql(url, error_str)
                 if result:
                     return result
 
