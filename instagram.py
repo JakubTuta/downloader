@@ -115,6 +115,11 @@ def _fetch_via_graphql(url, error_str):
     }
     response = requests.get(graphql_url, headers=headers)
     data = response.json()
+    return {
+        "status": "error",
+        "message": str(data),
+        "data": [],
+    }
 
     if not "data" in data:
         return None
