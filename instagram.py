@@ -108,6 +108,11 @@ def _fetch_via_graphql(url, error_str):
     shortcode = extract_shortcode(url)
 
     response = requests.get(graphql_url)
+    return {
+        "status": "error",
+        "message": str(response.status_code),
+        "data": [],
+    }
     data = response.json()
 
     return {
