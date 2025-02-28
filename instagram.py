@@ -6,6 +6,7 @@ from pathlib import Path
 
 import instaloader
 import pydantic
+import requests
 
 download_directory = "downloader"
 
@@ -44,49 +45,104 @@ def extract_username(url):
     return match.group(1)
 
 
+# Post / Reel
+
+
+def _extract_responses_from_node(node):
+    """Extract media information from a post node"""
+    responses = []
+    display_resources = node.get("display_resources", [])
+
+    if display_resources:
+        preview = min(display_resources, key=lambda x: x["config_height"])["src"]
+        highest_res = max(display_resources, key=lambda x: x["config_height"])
+        url = node.get("video_url", highest_res["src"])
+        media_type = "video" if node.get("is_video") else "image"
+
+        response = Response(
+            preview=preview,
+            type=media_type,
+            url=url,
+            width=highest_res["config_width"],
+            height=highest_res["config_height"],
+        )
+        responses.append(response)
+
+    return responses
+
+
+def _process_post_data(post_data, shortcode):
+    """Process post data and extract media responses"""
+    responses = []
+    if "edge_sidecar_to_children" in post_data:
+        posts = post_data["edge_sidecar_to_children"]["edges"]
+    else:
+        posts = [{"node": post_data}]
+
+    for post in posts:
+        responses.extend(_extract_responses_from_node(post["node"]))
+
+    username = post_data.get("owner", {}).get("username", "unknown")
+
+    return {
+        "status": "success",
+        "message": f"Downloaded post/reel {shortcode}",
+        "username": username,
+        "data": responses,
+    }
+
+
+def _fetch_via_graphql(url, error_str):
+    """Attempt to fetch post data via GraphQL API"""
+    graphql_url_match = re.search(
+        r"(https://[^\"'\s]+graphql/query[^\"'\s]+)", error_str
+    )
+    if not graphql_url_match:
+        return None
+
+    graphql_url = graphql_url_match.group(1)
+    shortcode = extract_shortcode(url)
+
+    response = requests.get(graphql_url, headers={"User-Agent": "Mozilla/5.0"})
+    data = response.json()
+
+    if "data" in data and "shortcode_media" in data["data"]:
+        return _process_post_data(
+            data["data"]["shortcode_media"], shortcode + " via GraphQL"
+        )
+
+    return None
+
+
 def download_post_or_reel(loader, url):
     """Download Instagram post or reel"""
     try:
         shortcode = extract_shortcode(url)
         main_post = instaloader.Post.from_shortcode(loader.context, shortcode)
-
-        posts = main_post.__dict__["_node"]["edge_sidecar_to_children"]["edges"]
-        responses = []
-
-        for post in posts:
-            node = post["node"]
-            display_resources = node.get("display_resources", [])
-
-            if display_resources:
-                preview = min(display_resources, key=lambda x: x["config_height"])[
-                    "src"
-                ]
-                highest_res = max(display_resources, key=lambda x: x["config_height"])
-                url = node.get("video_url", highest_res["src"])
-                media_type = "video" if node.get("is_video") else "image"
-
-                response = Response(
-                    preview=preview,
-                    type=media_type,
-                    url=url,
-                    width=highest_res["config_width"],
-                    height=highest_res["config_height"],
-                )
-                responses.append(response)
-
-        return {
-            "status": "success",
-            "message": f"Downloaded post/reel {shortcode}",
-            "username": main_post.owner_username,
-            "data": responses,
-        }
+        return _process_post_data(main_post.__dict__["_node"], shortcode)
 
     except Exception as e:
+        error_str = str(e)
+        if "graphql/query" in error_str and "shortcode" in error_str:
+            try:
+                result = _fetch_via_graphql(url, error_str)
+                if result:
+                    return result
+            except Exception as inner_e:
+                return {
+                    "status": "error",
+                    "message": f"Failed GraphQL fallback: {str(inner_e)}",
+                    "data": [],
+                }
+
         return {
             "status": "error",
             "message": str(e),
             "data": [],
         }
+
+
+# Stories
 
 
 def download_stories(loader: instaloader.Instaloader, url):
@@ -96,9 +152,7 @@ def download_stories(loader: instaloader.Instaloader, url):
 
         username = extract_username(url)
         profile = instaloader.Profile.from_username(loader.context, username)
-        loader.download_stories(
-            userids=[profile.userid], filename_target=download_directory
-        )
+        stories = loader.get_stories(userids=[profile.userid])
 
         return {
             "status": "success",
@@ -112,6 +166,9 @@ def download_stories(loader: instaloader.Instaloader, url):
             "message": str(e),
             "data": [],
         }
+
+
+# Profile
 
 
 def download_profile(loader, url):
@@ -192,9 +249,3 @@ def download_instagram_content(url) -> dict[str, typing.Union[str, list[Response
     # cleanup_downloads()
 
     return result
-
-
-if __name__ == "__main__":
-    url = "https://www.instagram.com/p/DDH-UO5i6Cj/?img_index=1"
-
-    print(download_instagram_content(url))
