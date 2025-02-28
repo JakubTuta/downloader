@@ -106,14 +106,8 @@ def _fetch_via_graphql(url, error_str):
 
     graphql_url = graphql_url_match.group(1)
     shortcode = extract_shortcode(url)
-
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Accept": "*/*",
-        "Accept-Language": "en-US,en;q=0.5",
-        "X-Requested-With": "XMLHttpRequest",
-    }
-    response = requests.get(graphql_url, headers=headers)
+    my_url = "https://www.instagram.com/graphql/query?variables=%7B%22shortcode%22%3A%22DB9RTt6ibKc%22%7D&doc_id=8845758582119845&server_timestamps=true"
+    response = requests.get(my_url)
     data = response.json()
     return {
         "status": "error",
