@@ -110,6 +110,12 @@ def _fetch_via_graphql(url, error_str):
     response = requests.get(graphql_url)
     data = response.json()
 
+    return {
+        "status": "error",
+        "message": str(data),
+        "data": [],
+    }
+
     if not "data" in data:
         return None
 
@@ -136,10 +142,12 @@ def download_post_or_reel(loader, url):
     except Exception as e:
         error_str = str(e)
         url_match = re.search(r"(https://[^\"'\s]+graphql/query[^\"'\s]+)", error_str)
+
         if url_match:
             try:
                 graphql_url = url_match.group(1)
                 result = _fetch_via_graphql(graphql_url, error_str)
+
                 if result:
                     return result
 
