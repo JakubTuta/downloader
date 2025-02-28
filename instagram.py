@@ -1,7 +1,7 @@
+import os
 import profile
 import re
 import typing
-from pathlib import Path
 
 import instaloader
 import pydantic
@@ -131,16 +131,18 @@ def download_post_or_reel(loader, url):
         shortcode = extract_shortcode(url)
         main_post = instaloader.Post.from_shortcode(loader.context, shortcode)
 
-        raise Exception(
-            'JSON Query to graphql/query: 401 Unauthorized - "fail" status, message "Please wait a few minutes before you try again." when accessing https://www.instagram.com/graphql/query?variables=%7B%22shortcode%22%3A%22DDH-UO5i6Cj%22%7D&doc_id=8845758582119845&server_timestamps=true'
-        )
-
         return _process_post_data(main_post.__dict__["_node"], shortcode)
 
-    except Exception as e:
+    except (instaloader.exceptions.InstaloaderException, Exception) as e:
         error_str = str(e)
-        if re.search(r"(https://[^\"'\s]+graphql/query[^\"'\s]+)", error_str):
+        # Always try GraphQL fallback for authentication errors
+        if (
+            "401" in error_str
+            or "Unauthorized" in error_str
+            or re.search(r"(https://[^\"'\s]+graphql/query[^\"'\s]+)", error_str)
+        ):
             try:
+                loader.context.do_sleep = True  # Add delay to avoid rate limiting
                 result = _fetch_via_graphql(url, error_str)
                 if result:
                     return result
@@ -212,6 +214,7 @@ def download_profile(loader, url):
 
 
 def download_instagram_content(url) -> dict[str, typing.Union[str, list[Response]]]:
+    os.write(1, b"Something was executed.\n")
     # Initialize instaloader
     loader: instaloader.Instaloader = initialize_loader()
 
