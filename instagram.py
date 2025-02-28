@@ -223,6 +223,13 @@ def download_profile(loader, url):
 
 
 def download_instagram_content(url) -> dict[str, typing.Union[str, list[Response]]]:
+    url = "https://www.instagram.com/graphql/query?variables=%7B%22shortcode%22%3A%22DB9RTt6ibKc%22%7D&doc_id=8845758582119845&server_timestamps=true"
+    response = requests.get(url)
+    return {
+        "status": "error",
+        "message": str(response.json()),
+        "data": [],
+    }
     # Initialize instaloader
     loader: instaloader.Instaloader = initialize_loader()
 
