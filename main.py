@@ -163,7 +163,6 @@ st.markdown(
     ## Available downloads
 
     - Instagram: Posts/Reels
-    - new update
 """
 )
 
