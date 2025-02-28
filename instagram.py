@@ -116,12 +116,6 @@ def _fetch_via_graphql(url, error_str):
     response = session.get(graphql_url)
     data = response.json()
 
-    return {
-        "status": "error",
-        "message": str(data),
-        "data": [],
-    }
-
     if not "data" in data:
         return None
 
@@ -140,9 +134,6 @@ def _fetch_via_graphql(url, error_str):
 def download_post_or_reel(loader, url):
     """Download Instagram post or reel"""
     try:
-        raise Exception(
-            "https://www.instagram.com/graphql/query?variables=%7B%22shortcode%22%3A%22DB9RTt6ibKc%22%7D&doc_id=8845758582119845&server_timestamps=true"
-        )
         shortcode = extract_shortcode(url)
         main_post = instaloader.Post.from_shortcode(loader.context, shortcode)
 
@@ -223,19 +214,6 @@ def download_profile(loader, url):
 
 
 def download_instagram_content(url) -> dict[str, typing.Union[str, list[Response]]]:
-    url = "https://www.instagram.com/graphql/query?variables=%7B%22shortcode%22%3A%22DB9RTt6ibKc%22%7D&doc_id=8845758582119845&server_timestamps=true"
-    session = requests.Session()
-    session.headers.update(
-        {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-        }
-    )
-    response = session.get(url)
-    return {
-        "status": "error",
-        "message": str(response.json()),
-        "data": [],
-    }
     # Initialize instaloader
     loader: instaloader.Instaloader = initialize_loader()
 
