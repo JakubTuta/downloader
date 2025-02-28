@@ -133,14 +133,9 @@ def download_post_or_reel(loader, url):
 
         return _process_post_data(main_post.__dict__["_node"], shortcode)
 
-    except (instaloader.exceptions.InstaloaderException, Exception) as e:
+    except Exception as e:
         error_str = str(e)
-        # Always try GraphQL fallback for authentication errors
-        if (
-            "401" in error_str
-            or "Unauthorized" in error_str
-            or re.search(r"(https://[^\"'\s]+graphql/query[^\"'\s]+)", error_str)
-        ):
+        if re.search(r"(https://[^\"'\s]+graphql/query[^\"'\s]+)", error_str):
             try:
                 result = _fetch_via_graphql(url, error_str)
                 if result:
@@ -155,7 +150,7 @@ def download_post_or_reel(loader, url):
 
         return {
             "status": "error",
-            "message": str(e),
+            "message": "dxd",
             "data": [],
         }
 
@@ -213,7 +208,6 @@ def download_profile(loader, url):
 
 
 def download_instagram_content(url) -> dict[str, typing.Union[str, list[Response]]]:
-    os.write(1, b"Something was executed.\n")
     # Initialize instaloader
     loader: instaloader.Instaloader = initialize_loader()
 
