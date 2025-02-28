@@ -136,13 +136,13 @@ def download_post_or_reel(loader, url):
     except Exception as e:
         error_str = str(e)
         if re.search(r"(https://[^\"'\s]+graphql/query[^\"'\s]+)", error_str):
-            return {
-                "status": "error",
-                "message": "true",
-                "data": [],
-            }
             try:
                 result = _fetch_via_graphql(url, error_str)
+                return {
+                    "status": "error",
+                    "message": str(result),
+                    "data": [],
+                }
                 if result:
                     return result
 
