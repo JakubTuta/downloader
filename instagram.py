@@ -98,6 +98,11 @@ def _process_post_data(post_data, shortcode):
 
 def _fetch_via_graphql(url, error_str):
     """Attempt to fetch post data via GraphQL API"""
+    return {
+        "status": "error",
+        "message": "xdd",
+        "data": [],
+    }
     graphql_url_match = re.search(
         r"(https://[^\"'\s]+graphql/query[^\"'\s]+)", error_str
     )
