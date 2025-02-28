@@ -24,11 +24,22 @@ class Response(pydantic.BaseModel):
 
 
 def get_downloads_dir():
-    """Get the default downloads directory for the user's operating system"""
-    # Common locations for downloads directory
-    if os.name == "nt":  # Windows
-        return os.path.join(os.path.expanduser("~"), "Downloads")
-    else:  # macOS, Linux, etc.
+    """Get the default downloads directory for the user's operating system,
+    use Gallery for mobile users"""
+    # Check if user is on mobile
+    if st.session_state.get("is_mobile", False) or (
+        hasattr(st, "session_state")
+        and st.session_state.get("_is_running_with_streamlit", False)
+        and "user_agent" in st.session_state
+        and any(
+            device in st.session_state.get("user_agent", "").lower()
+            for device in ["android", "iphone", "ipad", "mobile"]
+        )
+    ):
+        # For mobile devices, use Gallery directory
+        return os.path.join(os.path.expanduser("~"), "Gallery")
+    else:
+        # For desktop systems use Downloads folder
         return os.path.join(os.path.expanduser("~"), "Downloads")
 
 
