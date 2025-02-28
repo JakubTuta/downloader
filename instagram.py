@@ -142,7 +142,6 @@ def download_post_or_reel(loader, url):
             or re.search(r"(https://[^\"'\s]+graphql/query[^\"'\s]+)", error_str)
         ):
             try:
-                loader.context.do_sleep = True  # Add delay to avoid rate limiting
                 result = _fetch_via_graphql(url, error_str)
                 if result:
                     return result
